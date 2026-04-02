@@ -1,5 +1,5 @@
+import pkgutil
 from importlib import import_module
-from pathlib import Path
 from typing import Dict, Type
 
 from .base import BaseModel
@@ -16,12 +16,10 @@ def register_model(name: str, cls: Type[BaseModel]) -> None:
 
 
 def _auto_discover() -> None:
-    pkg_dir = Path(__file__).resolve().parent
-    for f in pkg_dir.iterdir():
-        if f.name in {"__init__.py", "base.py"} or f.suffix != ".py":
+    for _, mod_name, _ in pkgutil.iter_modules(__path__):
+        if mod_name == "base":
             continue
-        mod_name = f"{__name__}.{f.stem}"
-        import_module(mod_name)
+        import_module(f"{__name__}.{mod_name}")
 
 
 def create_model(name: str, **kwargs) -> BaseModel:

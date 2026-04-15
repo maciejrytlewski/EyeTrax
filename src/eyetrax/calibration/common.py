@@ -56,11 +56,12 @@ def compute_grid_points_from_shape(
     return compute_grid_points(indices, sw, sh, margin_ratio)
 
 
-def wait_for_face_and_countdown(cap, gaze_estimator, sw, sh, dur: int = 2) -> bool:
+def wait_for_face_and_countdown(cap, gaze_estimator, sw, sh, mx, my, dur: int = 2) -> bool:
     """
     Waits for a face to be detected (not blinking), then shows a countdown ellipse
     """
     cv2.namedWindow("Calibration", cv2.WND_PROP_FULLSCREEN)
+    cv2.moveWindow("Calibration", mx, my)
     cv2.setWindowProperty("Calibration", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     fd_start = None
     countdown = False

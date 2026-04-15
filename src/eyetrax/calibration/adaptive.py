@@ -10,7 +10,7 @@ import numpy as np
 from eyetrax.calibration.nine_point import run_9_point_calibration
 from eyetrax.gaze import GazeEstimator
 from eyetrax.utils.draw import draw_cursor
-from eyetrax.utils.screen import get_screen_size
+from eyetrax.utils.screen import get_monitor_geometry
 from eyetrax.utils.video import open_camera
 
 
@@ -93,15 +93,17 @@ def run_adaptive_calibration(
     retrain_every: int = 10,
     show_predictions: bool = True,
     camera_index: int = 0,
+    monitor_index: int = 0,
 ) -> None:
-    run_9_point_calibration(gaze_estimator, camera_index=camera_index)
+    run_9_point_calibration(gaze_estimator, camera_index=camera_index, monitor_index=monitor_index)
 
-    sw, sh = get_screen_size()
+    mx, my, sw, sh = get_monitor_geometry(monitor_index)
     sampler = BlueNoiseSampler(sw, sh)
     points = sampler.sample(num_random_points)
 
     cap = open_camera(camera_index)
     cv2.namedWindow("Adaptive Calibration", cv2.WND_PROP_FULLSCREEN)
+    cv2.moveWindow("Adaptive Calibration", mx, my)
     cv2.setWindowProperty(
         "Adaptive Calibration", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN
     )

@@ -2,18 +2,20 @@ import cv2
 import numpy as np
 
 from eyetrax.calibration.common import wait_for_face_and_countdown
-from eyetrax.utils.screen import get_screen_size
+from eyetrax.utils.screen import get_monitor_geometry
 from eyetrax.utils.video import open_camera
 
 
-def run_lissajous_calibration(gaze_estimator, camera_index: int = 0):
+def run_lissajous_calibration(
+    gaze_estimator, camera_index: int = 0, monitor_index: int = 0
+):
     """
     Moves a calibration point along a Lissajous curve
     """
-    sw, sh = get_screen_size()
+    mx, my, sw, sh = get_monitor_geometry(monitor_index)
 
     cap = open_camera(camera_index)
-    if not wait_for_face_and_countdown(cap, gaze_estimator, sw, sh, 2):
+    if not wait_for_face_and_countdown(cap, gaze_estimator, sw, sh, mx, my, 2):
         cap.release()
         cv2.destroyAllWindows()
         return

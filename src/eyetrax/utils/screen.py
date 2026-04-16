@@ -8,4 +8,15 @@ def get_monitor_geometry(monitor_index: int = 0):
             f"Invalid monitor_index {monitor_index}, available: 0-{len(monitors)-1}"
         )
     m = monitors[monitor_index]
-    return m.x, m.y, m.width, m.height
+    
+    try:
+        x, y, width, height = int(m.x), int(m.y), int(m.width), int(m.height)
+    except (AttributeError, TypeError, ValueError):
+        raise ValueError(f"Invalid monitor data: {m}")
+
+    if width <= 0 or height <= 0:
+        raise ValueError(
+            f"Invalid monitor dimensions: width={width}, height={height}"
+        )
+
+    return x, y, width, height

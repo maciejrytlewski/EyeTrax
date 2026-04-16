@@ -56,7 +56,9 @@ def compute_grid_points_from_shape(
     return compute_grid_points(indices, sw, sh, margin_ratio)
 
 
-def wait_for_face_and_countdown(cap, gaze_estimator, sw, sh, mx, my, dur: int = 2) -> bool:
+def wait_for_face_and_countdown(
+    cap, gaze_estimator, sw: int, sh: int, mx: int, my: int, dur: int = 2
+) -> bool:
     """
     Waits for a face to be detected (not blinking), then shows a countdown ellipse
     """

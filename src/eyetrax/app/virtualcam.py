@@ -20,7 +20,7 @@ from eyetrax.filters import (
 )
 from eyetrax.gaze import GazeEstimator
 from eyetrax.utils.draw import draw_cursor
-from eyetrax.utils.screen import get_screen_size
+from eyetrax.utils.screen import get_monitor_geometry
 from eyetrax.utils.video import camera, iter_frames
 
 
@@ -54,7 +54,7 @@ def run_virtualcam():
         else:
             run_lissajous_calibration(gaze_estimator, camera_index=camera_index)
 
-    screen_width, screen_height = get_screen_size()
+    _, _, screen_width, screen_height = get_monitor_geometry()
 
     if filter_method == "kalman":
         kalman = make_kalman()

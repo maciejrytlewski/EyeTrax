@@ -6,7 +6,7 @@ from typing import Tuple
 import cv2
 import numpy as np
 
-from eyetrax.utils.screen import get_screen_size
+from eyetrax.utils.screen import get_monitor_geometry
 from eyetrax.utils.video import open_camera
 
 from . import make_kalman
@@ -41,7 +41,7 @@ class KalmanSmoother(BaseSmoother):
         """
         Quick fine‑tuning pass to adjust Kalman filter's measurementNoiseCov
         """
-        screen_width, screen_height = get_screen_size()
+        _, _, screen_width, screen_height = get_monitor_geometry()
 
         points_tpl = [
             (screen_width // 2, screen_height // 4),

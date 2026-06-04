@@ -95,7 +95,11 @@ def wait_for_face_and_countdown(cap, gaze_estimator, sw, sh, dur: int = 2) -> bo
         else:
             countdown = False
             fd_start = None
-            txt = "Face not detected"
+            diagnostics = gaze_estimator.get_face_diagnostics(frame)
+            if diagnostics:
+                txt = diagnostics["message"]
+            else:
+                txt = "Face not detected"
             fs = 2
             thick = 3
             size, _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, fs, thick)

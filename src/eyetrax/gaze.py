@@ -253,6 +253,113 @@ class GazeEstimator:
 
         return features, blink_detected
 
+    def _compute_frame_brightness(self, image):
+        """Compute average brightness of frame (0-255 scale)"""
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        brightness = np.mean(gray)
+        return brightness
+
+    def get_face_diagnostics(self, image):
+        """
+        Diagnose why face detection might be failing.
+        Returns a diagnostic info dict or None if face is valid.
+        """
+        # Check lighting conditions
+        brightness = self._compute_frame_brightness(image)
+
+        if brightness < 30:
+            return {
+                "status": "too_dark",
+                "message": "Frame is too dark - improve lighting",
+            }
+
+        if brightness > 210:
+            return {
+                "status": "too_bright",
+                "message": "Frame is too bright - reduce glare",
+            }
+
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image_rgb = np.ascontiguousarray(image_rgb)
+        mp_image = self._mp.Image(
+            image_format=self._mp.ImageFormat.SRGB,
+            data=image_rgb,
+        )
+        ts_ms = int(time.time() * 1000)
+        if ts_ms <= self._mp_last_ts_ms:
+            ts_ms = self._mp_last_ts_ms + 1
+        self._mp_last_ts_ms = ts_ms
+
+        result = self._face_landmarker.detect_for_video(mp_image, ts_ms)
+
+        # No face detected at all
+        if not result.face_landmarks:
+            return {
+                "status": "no_face",
+                "message": "No face detected",
+                "suggestions": ["Ensure your face is visible", "Check lighting", "Move closer to camera"]
+            }
+
+        landmarks = result.face_landmarks[0]
+        all_points = np.array(
+            [(lm.x, lm.y, lm.z) for lm in landmarks], dtype=np.float32
+        )
+
+        # Check face angle (yaw, pitch, roll)
+        left_corner = all_points[33]
+        right_corner = all_points[263]
+        top_of_head = all_points[10]
+
+        eye_center = (left_corner + right_corner) / 2.0
+        x_axis = right_corner - left_corner
+        x_axis /= np.linalg.norm(x_axis) + 1e-9
+        y_approx = top_of_head - eye_center
+        y_approx /= np.linalg.norm(y_approx) + 1e-9
+        y_axis = y_approx - np.dot(y_approx, x_axis) * x_axis
+        y_axis /= np.linalg.norm(y_axis) + 1e-9
+        z_axis = np.cross(x_axis, y_axis)
+        z_axis /= np.linalg.norm(z_axis) + 1e-9
+        R = np.column_stack((x_axis, y_axis, z_axis))
+
+        yaw = np.arctan2(R[1, 0], R[0, 0])
+        pitch = np.arctan2(-R[2, 0], np.sqrt(R[2, 1] ** 2 + R[2, 2] ** 2))
+
+        # Check angle thresholds
+        yaw_deg = np.degrees(yaw)
+        pitch_deg = np.degrees(pitch)
+
+        if abs(yaw_deg) > 15:  # Face turned too far left/right
+            direction = "left" if yaw_deg < 0 else "right"
+            return {
+                "status": "face_turned",
+                "message": f"Face turned too far to the {direction}",
+            }
+
+        if abs(pitch_deg) > 50:  # Face looking too far up/down
+            direction = "down" if pitch_deg < 0 else "up"
+            return {
+                "status": "face_tilted_vertical",
+                "message": f"Face tilted too far {direction}",
+            }
+
+        # Check face size using inter-eye distance
+        inter_eye_dist = np.linalg.norm(right_corner - left_corner)
+
+        # Typical good inter-eye distance: normalize to frame
+        if inter_eye_dist < 0.03:
+            return {
+                "status": "face_too_small",
+                "message": "Face is too small - move closer to camera",
+            }
+
+        if inter_eye_dist > 0.4:
+            return {
+                "status": "face_too_large",
+                "message": "Face is too large - move further from camera",
+            }
+
+        return None
+
     def save_model(self, path: str | Path):
         """
         Pickle model

@@ -259,7 +259,7 @@ class GazeEstimator:
         brightness = np.mean(gray)
         return brightness
 
-    def get_face_diagnostics(self, image):
+    def get_face_diagnostics(self, image) -> dict | None:
         """
         Diagnose why face detection might be failing.
         Returns a diagnostic info dict or None if face is valid.
@@ -267,13 +267,13 @@ class GazeEstimator:
         # Check lighting conditions
         brightness = self._compute_frame_brightness(image)
 
-        if brightness < 30:
+        if brightness < 25:
             return {
                 "status": "too_dark",
                 "message": "Frame is too dark - improve lighting",
             }
 
-        if brightness > 210:
+        if brightness > 220:
             return {
                 "status": "too_bright",
                 "message": "Frame is too bright - reduce glare",
@@ -297,7 +297,6 @@ class GazeEstimator:
             return {
                 "status": "no_face",
                 "message": "No face detected",
-                "suggestions": ["Ensure your face is visible", "Check lighting", "Move closer to camera"]
             }
 
         landmarks = result.face_landmarks[0]
@@ -328,14 +327,14 @@ class GazeEstimator:
         yaw_deg = np.degrees(yaw)
         pitch_deg = np.degrees(pitch)
 
-        if abs(yaw_deg) > 15:  # Face turned too far left/right
+        if abs(yaw_deg) > 25:  # Face turned too far left/right
             direction = "left" if yaw_deg < 0 else "right"
             return {
                 "status": "face_turned",
                 "message": f"Face turned too far to the {direction}",
             }
 
-        if abs(pitch_deg) > 50:  # Face looking too far up/down
+        if abs(pitch_deg) > 30:  # Face looking too far up/down
             direction = "down" if pitch_deg < 0 else "up"
             return {
                 "status": "face_tilted_vertical",

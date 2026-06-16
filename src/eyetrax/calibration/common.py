@@ -62,6 +62,10 @@ def wait_for_face_and_countdown(
     """
     Waits for a face to be detected (not blinking), then shows a countdown ellipse
     """
+    last_diagnostic_message = "Looking for face..."
+    last_diagnostic_update = 0.0
+    diagnostic_update_interval = 0.5
+
     cv2.namedWindow("Calibration", cv2.WND_PROP_FULLSCREEN)
     cv2.moveWindow("Calibration", mx, my)
     cv2.setWindowProperty("Calibration", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -98,7 +102,18 @@ def wait_for_face_and_countdown(
         else:
             countdown = False
             fd_start = None
-            txt = "Face not detected"
+
+            if now - last_diagnostic_update >= diagnostic_update_interval:
+                diagnostics = gaze_estimator.get_face_diagnostics(frame)
+                if diagnostics:
+                    last_diagnostic_message = diagnostics["message"]
+                else:
+                    last_diagnostic_message = "NO face detected"
+
+                last_diagnostic_update = now
+
+            txt = last_diagnostic_message
+            
             fs = 2
             thick = 3
             size, _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, fs, thick)
